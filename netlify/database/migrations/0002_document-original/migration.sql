@@ -1,0 +1,1 @@
+ALTER TABLE "documents" ADD COLUMN "original_delivered_at" timestamp with time zone;

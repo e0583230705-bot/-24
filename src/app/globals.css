@@ -1,0 +1,257 @@
+@import "tailwindcss";
+
+/* צבעי המערכת: רקע בהיר, משטחים לבנים, מותג אינדיגו חי, וצבעי־משנה לכל אזור (ביקורת, הכנסות, הוצאות, בנק…).
+   כל צבע מוגדר פעם אחת כאן, ובמצב כהה רק הערכים מתחלפים. */
+:root {
+  --bg: #f6f7fb;
+  --surface: #ffffff;
+  --surface-2: #f1f2f8;
+  --border: #e6e8f0;
+  --text: #1a1d2e;
+  --muted: #6b7088;
+  --brand: #4f46e5;
+  --brand-strong: #4338ca;
+  --brand-soft: #eceefe;
+  --danger: #dc2626;
+  --danger-soft: #fee9e9;
+  --warn: #c2600a;
+  --warn-soft: #fff1df;
+  --good: #15803d;
+  --good-soft: #e3f6ea;
+  /* צבעי אזור */
+  --violet: #7c3aed;
+  --violet-soft: #f1ebfe;
+  --sky: #0284c7;
+  --sky-soft: #e3f3fd;
+  --pink: #db2777;
+  --pink-soft: #fde8f1;
+  --orange: #ea580c;
+  --orange-soft: #ffeee3;
+  --teal: #0d9488;
+  --teal-soft: #dff5f2;
+  --amber: #d97706;
+  --amber-soft: #fff4dc;
+  --shadow: 0 1px 2px rgb(26 29 46 / 0.04), 0 4px 16px rgb(26 29 46 / 0.05);
+  --shadow-lg: 0 8px 30px rgb(26 29 46 / 0.1);
+  --ring: rgb(79 70 229 / 0.18);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1117;
+    --surface: #171a23;
+    --surface-2: #1f232f;
+    --border: #2a2f3d;
+    --text: #eceef5;
+    --muted: #9399ad;
+    --brand: #818cf8;
+    --brand-strong: #a5b0fc;
+    --brand-soft: #262a4a;
+    --danger: #f87171;
+    --danger-soft: #3b1d1d;
+    --warn: #fbbf24;
+    --warn-soft: #3a2c12;
+    --good: #4ade80;
+    --good-soft: #15321f;
+    --violet: #a78bfa;
+    --violet-soft: #2b2145;
+    --sky: #38bdf8;
+    --sky-soft: #15303f;
+    --pink: #f472b6;
+    --pink-soft: #3d1c2e;
+    --orange: #fb923c;
+    --orange-soft: #3d2415;
+    --teal: #2dd4bf;
+    --teal-soft: #13342f;
+    --amber: #fbbf24;
+    --amber-soft: #3a2c12;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+    --shadow-lg: 0 8px 30px rgb(0 0 0 / 0.45);
+    --ring: rgb(129 140 248 / 0.25);
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-good: var(--good);
+  --color-good-soft: var(--good-soft);
+  --color-violet: var(--violet);
+  --color-violet-soft: var(--violet-soft);
+  --color-sky: var(--sky);
+  --color-sky-soft: var(--sky-soft);
+  --color-pink: var(--pink);
+  --color-pink-soft: var(--pink-soft);
+  --color-orange: var(--orange);
+  --color-orange-soft: var(--orange-soft);
+  --color-teal: var(--teal);
+  --color-teal-soft: var(--teal-soft);
+  --color-amber: var(--amber);
+  --color-amber-soft: var(--amber-soft);
+  --font-sans: var(--font-heebo), system-ui, sans-serif;
+  --shadow-card: var(--shadow);
+  --shadow-float: var(--shadow-lg);
+  --radius-3xl: 1.5rem;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  text-rendering: optimizeLegibility;
+}
+
+@layer components {
+  /* משטחים */
+  .card {
+    @apply rounded-3xl border border-border bg-surface p-5 shadow-card;
+  }
+  .card-title {
+    @apply text-base font-bold;
+  }
+  /* אריח צבעוני: קישור גדול עם אייקון, לבחירת אזור או בדיקה */
+  .tile {
+    @apply flex items-start gap-4 rounded-3xl border border-border bg-surface p-5 shadow-card transition;
+    @apply hover:-translate-y-0.5 hover:shadow-float;
+  }
+  .bubble {
+    @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl;
+  }
+
+  /* טפסים */
+  .input {
+    @apply w-full rounded-2xl border border-border bg-surface px-4 py-2.5 text-sm text-text outline-none transition;
+    @apply placeholder:text-muted/70 focus:border-brand focus:ring-4 focus:ring-[var(--ring)];
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-text;
+  }
+  .help {
+    @apply mt-1.5 text-xs leading-relaxed text-muted;
+  }
+
+  /* כפתורים */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition;
+    @apply hover:bg-brand-strong active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-text transition;
+    @apply hover:border-muted/40 hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-soft {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl bg-brand-soft px-4 py-2.5 text-sm font-semibold text-brand transition hover:opacity-90 disabled:opacity-50;
+  }
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+  .link {
+    @apply font-semibold text-brand hover:underline;
+  }
+
+  /* לשוניות ופילטרים */
+  .pills {
+    @apply flex flex-wrap gap-1 rounded-2xl bg-surface-2 p-1;
+  }
+  .pill {
+    @apply whitespace-nowrap rounded-xl px-3.5 py-2 text-sm font-semibold text-muted transition hover:text-text;
+  }
+  .pill-active {
+    @apply bg-surface text-brand shadow-sm;
+  }
+
+  /* תגיות */
+  .badge {
+    @apply inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold;
+  }
+  .badge-good {
+    @apply bg-good-soft text-good;
+  }
+  .badge-warn {
+    @apply bg-warn-soft text-warn;
+  }
+  .badge-bad {
+    @apply bg-danger-soft text-danger;
+  }
+  .badge-muted {
+    @apply bg-surface-2 text-muted;
+  }
+  .badge-brand {
+    @apply bg-brand-soft text-brand;
+  }
+
+  /* הודעות בתוך הדף */
+  .notice {
+    @apply rounded-2xl px-4 py-3 text-sm leading-relaxed;
+  }
+  .notice-info {
+    @apply bg-brand-soft text-brand;
+  }
+  .notice-good {
+    @apply bg-good-soft text-good;
+  }
+  .notice-warn {
+    @apply bg-warn-soft text-warn;
+  }
+  .notice-bad {
+    @apply bg-danger-soft text-danger;
+  }
+
+  /* טבלאות */
+  .table {
+    @apply w-full text-sm;
+  }
+  .table th {
+    @apply whitespace-nowrap border-b border-border px-4 py-2.5 text-start text-xs font-semibold text-muted;
+  }
+  .table td {
+    @apply border-b border-border px-4 py-3 align-middle;
+  }
+  .table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+  .table tbody tr:hover td {
+    @apply bg-surface-2/60;
+  }
+  .table-wrap {
+    @apply overflow-x-auto rounded-3xl border border-border bg-surface shadow-card;
+  }
+
+  .num {
+    direction: ltr;
+    unicode-bidi: isolate;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* .num הופך את כיוון התא ל־LTR, ואז text-end מיישר לימין — הפוך מהכותרות.
+   בממשק RTL "סוף" הוא תמיד שמאל, אז מקבעים את זה. מחוץ ל־@layer, כי סגנון בלי שכבה גובר על ה־utilities. */
+.num.text-end {
+  text-align: left;
+}
+
+/* <details> כקופסה מתקפלת: הסתרת המשולש של הדפדפן */
+details.panel > summary {
+  list-style: none;
+  cursor: pointer;
+}
+details.panel > summary::-webkit-details-marker {
+  display: none;
+}
+details.panel[open] > summary .chevron {
+  transform: rotate(180deg);
+}

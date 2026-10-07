@@ -1,0 +1,11 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# מריץ את Next.js כפונקציות שרת ב־Netlify (Server Components, Server Actions, proxy).
+# בלי זה Netlify מפרסם רק את הקבצים הסטטיים — וכל דף מחזיר 404.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

@@ -1,0 +1,1 @@
+ALTER TABLE "audit_engagements" ADD COLUMN "vat_config" jsonb;
