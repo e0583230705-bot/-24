@@ -374,3 +374,40 @@ export async function setPayslipMappingAction(engagementId: string, _: FormState
   revalidatePath(`/audit/${engagementId}`);
   return { ok: true };
 }
+
+export async function importPaymentsAction(engagementId: string, _: FormState, formData: FormData): Promise<FormState> {
+  let message: string;
+  try {
+    const { org } = await requirePermission("write_books");
+    const file = formData.get("file");
+    if (!(file instanceof File) || file.size === 0) return { error: "יש לבחור קובץ אקסל או CSV" };
+    const { importPayments } = await import("@/lib/services/audit");
+    const r = await importPayments(org.id, uuid.parse(engagementId), { name: file.name, bytes: new Uint8Array(await file.arrayBuffer()) });
+    message =
+      r.rows > 0
+        ? `נקלטו ${r.rows.toLocaleString("he-IL")} העברות (${r.mapped} מתוך ${r.headers} עמודות זוהו)`
+        : `הקובץ נשמר (${r.totalRows.toLocaleString("he-IL")} שורות), אבל צריך להשלים את מיפוי העמודות${r.missing.length ? `: ${r.missing.join(", ")}` : ""}`;
+  } catch (e) {
+    return errorMessage(e);
+  }
+  revalidatePath(`/audit/${engagementId}`);
+  return { ok: true, message };
+}
+
+export async function setPaymentsMappingAction(engagementId: string, _: FormState, formData: FormData): Promise<FormState> {
+  try {
+    const { org } = await requirePermission("write_books");
+    const { setPaymentsMapping } = await import("@/lib/services/audit");
+    const { PAYMENT_FIELDS } = await import("@/lib/domain/payroll/payments");
+    const mapping: Record<string, number> = {};
+    for (const field of Object.keys(PAYMENT_FIELDS)) {
+      const v = formData.get(field);
+      if (typeof v === "string" && v !== "") mapping[field] = Number(v);
+    }
+    await setPaymentsMapping(org.id, uuid.parse(engagementId), mapping);
+  } catch (e) {
+    return errorMessage(e);
+  }
+  revalidatePath(`/audit/${engagementId}`);
+  return { ok: true };
+}

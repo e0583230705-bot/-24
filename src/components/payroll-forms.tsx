@@ -67,7 +67,15 @@ export function PayrollMappingForm({
   );
 }
 
-export function PayslipsImportForm({ action: serverAction, hasFile }: { action: (s: FormState, f: FormData) => Promise<FormState>; hasFile: boolean }) {
+export function PayslipsImportForm({
+  action: serverAction,
+  hasFile,
+  labels = { first: "קליטת ריכוז שכר", aria: "ריכוז שכר" },
+}: {
+  action: (s: FormState, f: FormData) => Promise<FormState>;
+  hasFile: boolean;
+  labels?: { first: string; aria: string };
+}) {
   const [state, action, pending, ready] = useFormAction<FormState>(serverAction, {});
   return (
     <form method="post" onSubmit={action} className="space-y-2">
@@ -77,11 +85,11 @@ export function PayslipsImportForm({ action: serverAction, hasFile }: { action: 
           name="file"
           accept=".xlsx,.xls,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
           required
-          aria-label="ריכוז שכר"
+          aria-label={labels.aria}
           className="text-sm text-muted file:me-3 file:cursor-pointer file:rounded-xl file:border-0 file:bg-brand-soft file:px-3.5 file:py-2 file:text-sm file:font-semibold file:text-brand"
         />
         <button className="btn" disabled={pending || !ready}>
-          {pending ? "קולט..." : hasFile ? "קליטה מחדש" : "קליטת ריכוז שכר"}
+          {pending ? "קולט..." : hasFile ? "קליטה מחדש" : labels.first}
         </button>
       </div>
       <FormError message={state.error} />
@@ -96,11 +104,13 @@ export function PayslipMappingForm({
   headers,
   mapping,
   fields,
+  hint = "* שדות חובה. שאר השדות פותחים בדיקות נוספות (שכר מינימום, שעות נוספות, פנסיה, חשבון בנק…).",
 }: {
   action: (s: FormState, f: FormData) => Promise<FormState>;
   headers: string[];
   mapping: Partial<Record<string, number>>;
   fields: { key: string; label: string; required?: boolean }[];
+  hint?: string;
 }) {
   const [state, action, pending, ready] = useFormAction<FormState>(serverAction, {});
   return (
@@ -123,7 +133,7 @@ export function PayslipMappingForm({
           </label>
         ))}
       </div>
-      <p className="text-xs text-muted">* שדות חובה. שאר השדות פותחים בדיקות נוספות (שכר מינימום, שעות נוספות, פנסיה, חשבון בנק…).</p>
+      <p className="text-xs text-muted">{hint}</p>
       <button className="btn-ghost" disabled={pending || !ready}>
         שמירת המיפוי
       </button>

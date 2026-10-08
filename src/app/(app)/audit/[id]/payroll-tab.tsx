@@ -14,6 +14,7 @@ import { Icons } from "@/components/icons";
 import { importPayrollAction, saveNoteAction, setPayrollConfigAction } from "@/app/actions";
 import { PayslipsSection, payslipsStatus, type PayslipsData } from "./payslips-section";
 import { ProvisionsSection } from "./provisions-section";
+import { PaymentsSection, type PaymentsData } from "./payments-section";
 
 type Notes = Map<string, { text: string; author: string | null; updatedAt: Date }>;
 
@@ -44,6 +45,7 @@ export function PayrollTab({
   payroll,
   filename,
   payslips,
+  payments,
   accounts,
   lines,
   mapping,
@@ -56,6 +58,7 @@ export function PayrollTab({
   payroll: PayrollFile | null;
   filename: string | null;
   payslips: PayslipsData | null;
+  payments: PaymentsData | null;
   accounts: LedgerAccount[];
   lines: LedgerLine[];
   mapping: PayrollAccountMap | null;
@@ -124,6 +127,18 @@ export function PayrollTab({
           accounts={accounts}
           lines={lines}
           mapping={mapping}
+          tolerance={tolerance}
+          notes={notes}
+          write={write}
+        />
+      )}
+
+      {(Boolean(payslips?.rows.length) || payments !== null) && (
+        <PaymentsSection
+          engagementId={engagementId}
+          fiscalYear={fiscalYear}
+          data={payments}
+          payslips={payslips?.rows ?? []}
           tolerance={tolerance}
           notes={notes}
           write={write}

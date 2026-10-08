@@ -426,3 +426,21 @@ export const auditPayslips = pgTable(
   },
   (t) => [uniqueIndex("audit_payslips_engagement").on(t.engagementId)],
 );
+
+/** תשלומי שכר בפועל (פירוט זיכויי מס"ב / העברות משכורת, אקסל או CSV): כותרות, שורות ומיפוי — כמו התלושים */
+export const auditPayments = pgTable(
+  "audit_payments",
+  {
+    id: id(),
+    engagementId: uuid("engagement_id")
+      .notNull()
+      .references(() => auditEngagements.id, { onDelete: "cascade" }),
+    filename: text("filename").notNull(),
+    sheet: text("sheet"),
+    headers: jsonb("headers").notNull(),
+    rows: jsonb("rows").notNull(),
+    mapping: jsonb("mapping").notNull(),
+    importedAt: createdAt(),
+  },
+  (t) => [uniqueIndex("audit_payments_engagement").on(t.engagementId)],
+);

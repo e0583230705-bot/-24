@@ -29,7 +29,7 @@ import { reconcileBank, statementBalanceAt } from "@/lib/domain/ledger/bank-reco
 import { suggestVatAccounts, vatReasonableness } from "@/lib/domain/ledger/vat-reconciliation";
 import { listBankStatements, type VatConfig } from "@/lib/services/audit";
 import { compareYears, monthlySpikes } from "@/lib/domain/ledger/analytics";
-import { listNotes, loadPayroll, loadPayslips } from "@/lib/services/audit";
+import { listNotes, loadPayments, loadPayroll, loadPayslips } from "@/lib/services/audit";
 import { PayrollTab, payrollStatus } from "./payroll-tab";
 import type { PayrollAccountMap } from "@/lib/domain/payroll/ledger-reconciliation";
 import { PageHeader } from "@/components/page-header";
@@ -42,7 +42,7 @@ const TABS = [
   { key: "recon", label: "התאמות", icon: "bank", tone: "bg-teal-soft text-teal", blurb: "בנק ליום המאזן וסבירות מע״מ" },
   { key: "benford", label: "חוק בנפורד", icon: "percent", tone: "bg-pink-soft text-pink", blurb: "התפלגות הספרה הראשונה" },
   { key: "sample", label: "מדגם", icon: "inbox", tone: "bg-amber-soft text-amber", blurb: "פקודות לבדיקה מול אסמכתאות" },
-  { key: "payroll", label: "שכר", icon: "users", tone: "bg-brand-soft text-brand", blurb: "קובץ 126: עובדים, 102 חודשי, והתאמה לספרים" },
+  { key: "payroll", label: "שכר", icon: "users", tone: "bg-brand-soft text-brand", blurb: "126, תלושים, הפרשות ותשלומים מול הספרים" },
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
 
@@ -59,7 +59,13 @@ export default async function EngagementPage({ params, searchParams }: PageProps
 
   const materiality =
     e.materialityBase && e.materialityPct ? computeMateriality(e.materialityBase, e.materialityPct) : null;
-  const [notes, statements, payroll, payslips] = await Promise.all([listNotes(org.id, e.id), listBankStatements(org.id, e.id), loadPayroll(org.id, e.id), loadPayslips(org.id, e.id)]);
+  const [notes, statements, payroll, payslips, payments] = await Promise.all([
+    listNotes(org.id, e.id),
+    listBankStatements(org.id, e.id),
+    loadPayroll(org.id, e.id),
+    loadPayslips(org.id, e.id),
+    loadPayments(org.id, e.id),
+  ]);
 
   // שורת סטטוס קצרה לכל בדיקה, לאריחים בסקירה
   const status: Record<TabKey, { text: string; tone: "good" | "warn" | "bad" | "muted" }> = {
@@ -265,6 +271,7 @@ export default async function EngagementPage({ params, searchParams }: PageProps
               payroll={payroll?.file ?? null}
               filename={payroll?.filename ?? null}
               payslips={payslips}
+              payments={payments}
               accounts={accounts}
               lines={lines}
               mapping={(e.payrollConfig as PayrollAccountMap | null) ?? null}

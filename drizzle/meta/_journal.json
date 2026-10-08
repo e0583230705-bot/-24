@@ -99,6 +99,13 @@
       "when": 1791381061602,
       "tag": "0013_payslips",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1791501479415,
+      "tag": "0014_payments",
+      "breakpoints": true
     }
   ]
 }
