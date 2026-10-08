@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * בדיקה אופטימית בלבד (קיום עוגייה), בלי גישה ל־DB.
  * האימות האמיתי מתבצע ב־src/lib/auth/dal.ts בכל דף ופעולה.
  */
-const PUBLIC_PATHS = ["/login", "/signup", "/forgot-password", "/reset-password"];
+const PUBLIC_PATHS = ["/login", "/signup", "/forgot-password", "/reset-password", "/api/health"];
 
 export default function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
