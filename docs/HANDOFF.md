@@ -74,8 +74,10 @@
   האפליקציה מתחברת בתפקיד `bikoret_app` (בעל הטבלאות) דרך ה־pooler בפורט 6543; טבלה חדשה שנוצרת כ־`postgres` צריכה
   `ALTER TABLE ... OWNER TO bikoret_app` ו־`ENABLE ROW LEVEL SECURITY` (RLS דולק בכל הטבלאות כדי שה־anon key של Supabase
   לא יחשוף נתונים; האפליקציה עצמה עוקפת RLS כבעלים).
-  משתני סביבה ב־Netlify: `DATABASE_URL` (עם `?sslmode=verify-full`), `DATABASE_MIGRATIONS=external`, `APP_URL`;
-  אם האימות מול תעודת השרת נכשל — `DATABASE_SSL_CA` עם תעודת השורש מ־Supabase. טבלאות הנהלת החשבונות נשארו בסכמה
+  משתני סביבה ב־Netlify: `DATABASE_URL` (pooler, פורט 6543), `DATABASE_MIGRATIONS=external`, `APP_URL`
+  (משתנה שנשמר דרך ה־MCP כ"סודי" לא נשמר בפועל — להגדיר רגיל; אחרי שינוי משתנה חובה פריסה מחדש).
+  TLS: Supabase חותמת עם CA פרטי; תעודת השורש שלה מוטמעת ב־`src/db/supabase-ca.ts` ומופעלת אוטומטית לכל
+  מארח `*.supabase.com/co`. בדיקת חיות: `/api/health`. **אומת 8.10.2026**: הרשמה + הקמת משרד נכתבו ל־Supabase. טבלאות הנהלת החשבונות נשארו בסכמה
   (לא בשימוש).
 - מגבלות serverless: בקשות עד 6MB.
 
