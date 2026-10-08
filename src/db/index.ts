@@ -23,9 +23,12 @@ async function initPostgres(connectionString: string, runMigrations: boolean): P
   // פונקציות serverless: מעט חיבורים לכל מופע.
   // TLS: מצב ה־SSL נקבע בכתובת (למשל ?sslmode=verify-full). ל־Supabase מצרפים את תעודת השורש הפרטית שלהם
   // (ראו supabase-ca.ts); לשרת אחר עם CA פרטי — תוכן PEM ב־DATABASE_SSL_CA.
-  const host = new URL(connectionString).hostname;
+  const url = new URL(connectionString);
+  const host = url.hostname;
   const ca = process.env.DATABASE_SSL_CA?.trim() || (/\.supabase\.(com|co)$/.test(host) ? SUPABASE_ROOT_CA : undefined);
-  const pool = new Pool({ connectionString, max: 3, ...(ca ? { ssl: { ca, rejectUnauthorized: true, servername: host } } : {}) });
+  // pg נותן עדיפות ל־sslmode שבכתובת על פני אפשרות ssl מפורשת — לכן כשיש CA משלנו מסירים אותו מהכתובת
+  if (ca) url.searchParams.delete("sslmode");
+  const pool = new Pool({ connectionString: url.toString(), max: 3, ...(ca ? { ssl: { ca, rejectUnauthorized: true, servername: host } } : {}) });
   const db = drizzlePg({ client: pool, schema });
   if (runMigrations) {
     const { migrate } = await import("drizzle-orm/node-postgres/migrator");
