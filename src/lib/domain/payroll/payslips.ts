@@ -48,6 +48,7 @@ export type PayslipField =
   | "studyFundEmployer"
   | "niEmployer"
   | "employerCost"
+  | "recuperationPay"
   | "vacationBalance"
   | "sickBalance"
   | "bankAccount"
@@ -96,6 +97,7 @@ export const PAYSLIP_FIELDS: Record<PayslipField, FieldDef> = {
   studyFundEmployer: { label: "קרן השתלמות מעסיק", kind: "money", match: rx("(השתלמות|קה ל|קרן השתלמות)( |-)?(מעסיק|מעביד|מ)$", "השתלמות מעסיק|השתלמות מעביד|קה ל מעסיק|קה ל מעביד") },
   niEmployer: { label: "ביטוח לאומי מעסיק", kind: "money", match: rx("ביטוח לאומי (מעסיק|מעביד)|ב ל (מעסיק|מעביד)|בטוח לאומי (מעסיק|מעביד)") },
   employerCost: { label: "עלות מעסיק", kind: "money", match: rx("עלות (מעסיק|מעביד|שכר|כוללת)|סה כ עלות") },
+  recuperationPay: { label: "דמי הבראה (תשלום)", kind: "money", match: rx("^(דמי |תשלום )?הבראה$", "דמי הבראה|תשלום הבראה") },
   vacationBalance: { label: "יתרת חופשה", kind: "number", match: rx("יתרת חופשה|חופשה יתרה|יתרה חופשה|ימי חופשה צבורים|צבירת חופשה") },
   sickBalance: { label: "יתרת מחלה", kind: "number", match: rx("יתרת מחלה|מחלה יתרה|ימי מחלה צבורים") },
   bankAccount: { label: "חשבון בנק", kind: "text", match: rx("חשבון בנק|מס חשבון|מספר חשבון|בנק סניף חשבון|^חשבון$") },
@@ -121,7 +123,7 @@ export function autoMapColumns(headers: string[]): PayslipColumnMap {
     "overtimeHours", "hours", "hourlyRate", "overtimePay", "baseSalary", "taxableGross", "niWages",
     "niEmployer", "pensionEmployer", "studyFundEmployer", "severanceEmployer", "employerCost",
     "pensionEmployee", "studyFundEmployee", "healthEmployee", "niEmployee", "incomeTax",
-    "totalDeductions", "otherDeductions", "net", "gross", "vacationBalance", "sickBalance", "bankAccount", "department",
+    "totalDeductions", "otherDeductions", "net", "gross", "recuperationPay", "vacationBalance", "sickBalance", "bankAccount", "department",
   ];
   for (const field of order) {
     for (const pattern of PAYSLIP_FIELDS[field].match) {
@@ -207,6 +209,8 @@ export interface PayslipRow {
   studyFundEmployer: Agorot | null;
   niEmployer: Agorot | null;
   employerCost: Agorot | null;
+  /** דמי הבראה ששולמו בתלוש */
+  recuperationPay: Agorot | null;
   vacationBalance: number | null;
   sickBalance: number | null;
   bankAccount: string | null;
@@ -328,6 +332,7 @@ export function applyPayslipMapping(table: PayslipTable, map: PayslipColumnMap, 
       studyFundEmployer: money(get(r, "studyFundEmployer")),
       niEmployer: money(get(r, "niEmployer")),
       employerCost: money(get(r, "employerCost")),
+      recuperationPay: money(get(r, "recuperationPay")),
       vacationBalance: num(get(r, "vacationBalance")),
       sickBalance: num(get(r, "sickBalance")),
       bankAccount: text(get(r, "bankAccount")).replace(/\s+/g, "") || null,

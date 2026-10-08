@@ -13,6 +13,7 @@ import { Collapsible } from "@/components/page-header";
 import { Icons } from "@/components/icons";
 import { importPayrollAction, saveNoteAction, setPayrollConfigAction } from "@/app/actions";
 import { PayslipsSection, payslipsStatus, type PayslipsData } from "./payslips-section";
+import { ProvisionsSection } from "./provisions-section";
 
 type Notes = Map<string, { text: string; author: string | null; updatedAt: Date }>;
 
@@ -113,6 +114,21 @@ export function PayrollTab({
       )}
 
       <PayslipsSection engagementId={engagementId} fiscalYear={fiscalYear} data={payslips} payroll={payroll} tolerance={tolerance} notes={notes} write={write} />
+
+      {payslips && payslips.rows.length > 0 && (
+        <ProvisionsSection
+          engagementId={engagementId}
+          fiscalYear={fiscalYear}
+          rows={payslips.rows}
+          payroll={payroll}
+          accounts={accounts}
+          lines={lines}
+          mapping={mapping}
+          tolerance={tolerance}
+          notes={notes}
+          write={write}
+        />
+      )}
     </div>
   );
 }

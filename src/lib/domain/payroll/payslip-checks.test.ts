@@ -8,7 +8,7 @@ const slip = (over: Partial<PayslipRow> = {}): PayslipRow => ({
   hours: 182, overtimeHours: 0, hourlyRate: 60_00, baseSalary: 10_920_00, overtimePay: 0, gross: 10_920_00, taxableGross: null, niWages: null,
   incomeTax: 900_00, niEmployee: 440_00, healthEmployee: 400_00, pensionEmployee: 655_20, studyFundEmployee: null, otherDeductions: null,
   totalDeductions: null, net: 10_920_00 - 900_00 - 440_00 - 400_00 - 655_20, pensionEmployer: 709_80, severanceEmployer: 655_20,
-  studyFundEmployer: null, niEmployer: null, employerCost: null, vacationBalance: null, sickBalance: null, bankAccount: "12-345-678901",
+  studyFundEmployer: null, niEmployer: null, employerCost: null, recuperationPay: null, vacationBalance: null, sickBalance: null, bankAccount: "12-345-678901",
   department: null, line: 1, ...over,
 });
 const year = (over: Partial<PayslipRow> = {}) => Array.from({ length: 12 }, (_, i) => slip({ month: `2025-${String(i + 1).padStart(2, "0")}`, line: i + 1, ...over }));

@@ -61,5 +61,31 @@ export function expectedEmployeeNi(month: string, niWages: Agorot): Agorot | nul
   return Math.round((reduced * r.employeeReduced + full * r.employeeFull) / 100);
 }
 
+/**
+ * דמי הבראה — מגזר פרטי (צו ההרחבה): ימים לפי שנת העבודה, ותעריף ליום. ⚠ לאימות רו"ח.
+ * הזכאות מתחילה אחרי שנת עבודה מלאה; בשנה הראשונה הזכות נצברת ומשולמת בתומה.
+ */
+export const RECUPERATION_DAY_RATE: Dated<Agorot>[] = [
+  { from: "2023-01-01", value: 418_00 },
+  { from: "2026-01-01", value: 451_50 },
+];
+
+export function recuperationRateAt(date: string) {
+  return pick(RECUPERATION_DAY_RATE, date);
+}
+
+/** ימי הבראה בשנה לפי שנת העבודה (1 = השנה הראשונה) */
+export function recuperationDays(employmentYear: number): number {
+  if (employmentYear <= 1) return 5;
+  if (employmentYear <= 3) return 6;
+  if (employmentYear <= 10) return 7;
+  if (employmentYear <= 15) return 8;
+  if (employmentYear <= 19) return 9;
+  return 10;
+}
+
+/** ערך יום חופשה: שכר חודשי חלקי ימי העבודה בחודש — 21.67 בשבוע של 5 ימים, 25 בשבוע של 6 ימים. ⚠ לאימות רו"ח */
+export const VACATION_DAY_DIVISOR = { fiveDayWeek: 21.67, sixDayWeek: 25 } as const;
+
 /** חוק שעות עבודה ומנוחה: שעתיים ראשונות 125%, מעבר 150%; עד 16 שעות נוספות בשבוע (≈ 70 בחודש) */
 export const OVERTIME = { firstTwoHoursRate: 1.25, beyondRate: 1.5, maxMonthlyOvertimeHours: 70, monthlyHours: 182 } as const;

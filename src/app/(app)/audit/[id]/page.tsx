@@ -147,8 +147,8 @@ export default async function EngagementPage({ params, searchParams }: PageProps
                   <summary className="link text-sm">{hasBooks ? "קליטה מחדש" : "איך קולטים?"}</summary>
                   <div className="mt-3 space-y-3">
                     <p className="text-xs leading-relaxed text-muted">
-                      בתוכנת הנהלת החשבונות של הלקוח מפיקים &quot;קובץ במבנה אחיד&quot; (ספריית OPENFRMT) ובוחרים כאן יחד את BKMVDATA.TXT
-                      ו־INI.TXT. אפשר גם כרטסת CSV.
+                      <strong>התוכנה שבה הלקוח מנהל את הספרים</strong> (חשבשבת, פריוריטי, רווחית וכו&apos;) מפיקה &quot;קובץ במבנה
+                      אחיד&quot; (תיקיית OPENFRMT). בוחרים כאן יחד את BKMVDATA.TXT ו־INI.TXT. אפשר גם כרטסת CSV.
                     </p>
                     <LedgerImportForm action={importLedgerAction.bind(null, e.id, "current")} label={`קליטת שנת ${e.fiscalYear}`} />
                   </div>
