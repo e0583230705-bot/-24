@@ -3,6 +3,7 @@ import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { drizzle, type PgliteDatabase } from "drizzle-orm/pglite";
 import * as schema from "./schema";
+import { SUPABASE_ROOT_CA } from "./supabase-ca";
 
 /**
  * שלושה מצבים:
@@ -20,10 +21,11 @@ async function initPostgres(connectionString: string, runMigrations: boolean): P
   const { Pool } = await import("pg");
   const { drizzle: drizzlePg } = await import("drizzle-orm/node-postgres");
   // פונקציות serverless: מעט חיבורים לכל מופע.
-  // TLS: מצב ה־SSL נקבע בכתובת (למשל ?sslmode=verify-full). אם ה־CA של השרת אינו ציבורי (Supabase מספקת
-  // תעודת שורש להורדה), שמים את תוכן קובץ ה־PEM ב־DATABASE_SSL_CA והאימות נעשה מולו.
-  const ca = process.env.DATABASE_SSL_CA?.trim();
-  const pool = new Pool({ connectionString, max: 3, ...(ca ? { ssl: { ca, rejectUnauthorized: true } } : {}) });
+  // TLS: מצב ה־SSL נקבע בכתובת (למשל ?sslmode=verify-full). ל־Supabase מצרפים את תעודת השורש הפרטית שלהם
+  // (ראו supabase-ca.ts); לשרת אחר עם CA פרטי — תוכן PEM ב־DATABASE_SSL_CA.
+  const host = new URL(connectionString).hostname;
+  const ca = process.env.DATABASE_SSL_CA?.trim() || (/\.supabase\.(com|co)$/.test(host) ? SUPABASE_ROOT_CA : undefined);
+  const pool = new Pool({ connectionString, max: 3, ...(ca ? { ssl: { ca, rejectUnauthorized: true, servername: host } } : {}) });
   const db = drizzlePg({ client: pool, schema });
   if (runMigrations) {
     const { migrate } = await import("drizzle-orm/node-postgres/migrator");
