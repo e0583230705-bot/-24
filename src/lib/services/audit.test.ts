@@ -223,3 +223,59 @@ describe("payslips (ריכוז שכר)", async () => {
     expect((await loadPayslips(org.id, e.id))?.rows).toEqual([]);
   });
 });
+
+describe("salary payments (פירוט העברות)", async () => {
+  const { importPayments, loadPayments, setPaymentsMapping } = await import("./audit");
+  const PAYMENTS = ["שם המוטב,ת.ז.,בנק,סניף,מספר חשבון,סכום,תאריך ערך", "דנה כהן,123456782,12,345,678901,8500,05/02/2025"].join("\n");
+
+  it("imports, re-maps, and validates the mapping", async () => {
+    const { user, org } = await firm("pay1@example.com");
+    const e = await createEngagement(org.id, user.id, { clientName: "לקוח", fiscalYear: 2025 });
+    expect(await importPayments(org.id, e.id, { name: "pay.csv", bytes: enc(PAYMENTS) })).toMatchObject({ rows: 1, missing: [] });
+    const loaded = await loadPayments(org.id, e.id);
+    expect(loaded?.rows[0]).toMatchObject({ taxId: "123456782", account: "12-345-678901", amount: 8500_00, date: "2025-02-05" });
+    // בלי ת.ז. — המוטב מזוהה לפי החשבון
+    await setPaymentsMapping(org.id, e.id, { name: 0, bank: 2, branch: 3, account: 4, amount: 5, date: 6 });
+    expect((await loadPayments(org.id, e.id))?.rows[0].taxId).toBeNull();
+    await expect(setPaymentsMapping(org.id, e.id, { name: 0, amount: 5, date: 6 })).rejects.toThrow(/זהות או חשבון/);
+    await expect(setPaymentsMapping(org.id, e.id, { taxId: 1, amount: 1, date: 6 })).rejects.toThrow(/יותר משדה/);
+  });
+
+  it("keeps a file without recognized columns and asks for mapping", async () => {
+    const { user, org } = await firm("pay2@example.com");
+    const e = await createEngagement(org.id, user.id, { clientName: "לקוח", fiscalYear: 2025 });
+    expect((await importPayments(org.id, e.id, { name: "odd.csv", bytes: enc("A,B,C\n1,2,3") })).rows).toBe(0);
+    expect((await loadPayments(org.id, e.id))?.issues[0].message).toMatch(/לא זוהו עמודות חובה/);
+  });
+});
+
+describe("work papers", async () => {
+  const { listWorkpapers, prepareWorkpaper, reviewWorkpaper } = await import("./audit");
+
+  it("records preparer and reviewer, requires a different reviewer, and resets review on change", async () => {
+    const { user, org } = await firm("wp1@example.com");
+    const reviewer = await registerUser({ email: "wp1-reviewer@example.com", name: "סוקרת", password: "correct horse battery" });
+    const e = await createEngagement(org.id, user.id, { clientName: "לקוח", fiscalYear: 2025 });
+
+    await expect(prepareWorkpaper(org.id, e.id, "payroll", "  ", user.id)).rejects.toThrow(/מסקנה/);
+    await expect(prepareWorkpaper(org.id, e.id, "nope", "x", user.id)).rejects.toThrow(/תחום/);
+    await expect(reviewWorkpaper(org.id, e.id, "payroll", reviewer.id)).rejects.toThrow(/אין נייר/);
+
+    await prepareWorkpaper(org.id, e.id, "payroll", "נבדק השכר. אין ממצאים מהותיים.", user.id);
+    await expect(reviewWorkpaper(org.id, e.id, "payroll", user.id)).rejects.toThrow(/אדם אחר/);
+    await reviewWorkpaper(org.id, e.id, "payroll", reviewer.id);
+    let wp = (await listWorkpapers(org.id, e.id)).get("payroll")!;
+    expect(wp).toMatchObject({ conclusion: "נבדק השכר. אין ממצאים מהותיים.", preparedBy: "רו\"ח", reviewedBy: "סוקרת" });
+    expect(wp.reviewedAt).toBeInstanceOf(Date);
+
+    // שינוי במסקנה מבטל את הסקירה
+    await prepareWorkpaper(org.id, e.id, "payroll", "עודכן", user.id);
+    wp = (await listWorkpapers(org.id, e.id)).get("payroll")!;
+    expect(wp).toMatchObject({ conclusion: "עודכן", reviewedBy: null, reviewedAt: null });
+
+    // משרד אחר לא רואה ולא כותב
+    const other = await firm("wp2@example.com");
+    expect((await listWorkpapers(other.org.id, e.id)).size).toBe(0);
+    await expect(prepareWorkpaper(other.org.id, e.id, "tb", "x", other.user.id)).rejects.toThrow(/לא נמצא/);
+  });
+});

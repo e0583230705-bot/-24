@@ -709,3 +709,94 @@ export async function setPaymentsMapping(organizationId: string, engagementId: s
   if (missing.length) throw new ValidationError(`חסר מיפוי לעמודות חובה: ${missing.join(", ")}`);
   await db.update(schema.auditPayments).set({ mapping }).where(eq(schema.auditPayments.engagementId, engagement.id));
 }
+
+// ---------- ניירות עבודה ----------
+
+export const WORKPAPER_AREAS = ["tb", "je", "analytics", "recon", "benford", "sample", "payroll"] as const;
+export type WorkpaperAreaKey = (typeof WORKPAPER_AREAS)[number];
+const isArea = (a: string): a is WorkpaperAreaKey => (WORKPAPER_AREAS as readonly string[]).includes(a);
+
+export interface Workpaper {
+  area: WorkpaperAreaKey;
+  conclusion: string;
+  preparedById: string | null;
+  preparedBy: string | null;
+  preparedAt: Date;
+  reviewedById: string | null;
+  reviewedBy: string | null;
+  reviewedAt: Date | null;
+}
+
+export async function listWorkpapers(organizationId: string, engagementId: string): Promise<Map<WorkpaperAreaKey, Workpaper>> {
+  const engagement = await getEngagement(organizationId, engagementId);
+  const out = new Map<WorkpaperAreaKey, Workpaper>();
+  if (!engagement) return out;
+  const db = await getDb();
+  const preparer = schema.users;
+  const rows = await db
+    .select({
+      area: schema.auditWorkpapers.area,
+      conclusion: schema.auditWorkpapers.conclusion,
+      preparedById: schema.auditWorkpapers.preparedBy,
+      preparedAt: schema.auditWorkpapers.preparedAt,
+      reviewedById: schema.auditWorkpapers.reviewedBy,
+      reviewedAt: schema.auditWorkpapers.reviewedAt,
+    })
+    .from(schema.auditWorkpapers)
+    .where(eq(schema.auditWorkpapers.engagementId, engagement.id));
+  const ids = [...new Set(rows.flatMap((r) => [r.preparedById, r.reviewedById]).filter((x): x is string => Boolean(x)))];
+  const names = new Map<string, string>();
+  for (const id of ids) {
+    const [u] = await db.select({ name: preparer.name }).from(preparer).where(eq(preparer.id, id));
+    if (u) names.set(id, u.name);
+  }
+  for (const r of rows) {
+    if (!isArea(r.area)) continue;
+    out.set(r.area, {
+      area: r.area,
+      conclusion: r.conclusion,
+      preparedById: r.preparedById,
+      preparedBy: r.preparedById ? (names.get(r.preparedById) ?? null) : null,
+      preparedAt: r.preparedAt,
+      reviewedById: r.reviewedById,
+      reviewedBy: r.reviewedById ? (names.get(r.reviewedById) ?? null) : null,
+      reviewedAt: r.reviewedAt,
+    });
+  }
+  return out;
+}
+
+/** "הוכן": שמירת מסקנה בשם המשתמש. כל שמירה מבטלת סקירה קודמת — הסוקר צריך לאשר את הנוסח החדש */
+export async function prepareWorkpaper(organizationId: string, engagementId: string, area: string, conclusion: string, userId: string) {
+  const engagement = await getEngagement(organizationId, engagementId);
+  if (!engagement) throw new ValidationError("תיק הביקורת לא נמצא");
+  if (!isArea(area)) throw new ValidationError("תחום לא מוכר");
+  const clean = conclusion.trim().slice(0, 5000);
+  if (!clean) throw new ValidationError("יש לכתוב מסקנה: מה נבדק ומה נמצא");
+  const db = await getDb();
+  const values = { conclusion: clean, preparedBy: userId, preparedAt: new Date(), reviewedBy: null, reviewedAt: null };
+  await db
+    .insert(schema.auditWorkpapers)
+    .values({ engagementId: engagement.id, area, ...values })
+    .onConflictDoUpdate({ target: [schema.auditWorkpapers.engagementId, schema.auditWorkpapers.area], set: values });
+  await db.insert(schema.auditLog).values({ organizationId, action: "prepare", entity: "audit_workpaper", entityId: engagement.id, data: { area, by: userId } });
+}
+
+/** "נסקר": רק אדם אחר ממי שהכין */
+export async function reviewWorkpaper(organizationId: string, engagementId: string, area: string, userId: string) {
+  const engagement = await getEngagement(organizationId, engagementId);
+  if (!engagement) throw new ValidationError("תיק הביקורת לא נמצא");
+  if (!isArea(area)) throw new ValidationError("תחום לא מוכר");
+  const db = await getDb();
+  const [wp] = await db
+    .select({ preparedBy: schema.auditWorkpapers.preparedBy })
+    .from(schema.auditWorkpapers)
+    .where(and(eq(schema.auditWorkpapers.engagementId, engagement.id), eq(schema.auditWorkpapers.area, area)));
+  if (!wp) throw new ValidationError("עדיין אין נייר עבודה מוכן בתחום הזה");
+  if (wp.preparedBy === userId) throw new ValidationError("הסקירה צריכה להיעשות על ידי אדם אחר ממי שהכין את נייר העבודה");
+  await db
+    .update(schema.auditWorkpapers)
+    .set({ reviewedBy: userId, reviewedAt: new Date() })
+    .where(and(eq(schema.auditWorkpapers.engagementId, engagement.id), eq(schema.auditWorkpapers.area, area)));
+  await db.insert(schema.auditLog).values({ organizationId, action: "review", entity: "audit_workpaper", entityId: engagement.id, data: { area, by: userId } });
+}

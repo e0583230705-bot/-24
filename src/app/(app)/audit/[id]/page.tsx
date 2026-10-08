@@ -29,7 +29,9 @@ import { reconcileBank, statementBalanceAt } from "@/lib/domain/ledger/bank-reco
 import { suggestVatAccounts, vatReasonableness } from "@/lib/domain/ledger/vat-reconciliation";
 import { listBankStatements, type VatConfig } from "@/lib/services/audit";
 import { compareYears, monthlySpikes } from "@/lib/domain/ledger/analytics";
-import { listNotes, loadPayments, loadPayroll, loadPayslips } from "@/lib/services/audit";
+import { listNotes, listWorkpapers, loadPayments, loadPayroll, loadPayslips, WORKPAPER_AREAS } from "@/lib/services/audit";
+import { collectFindings, findingsByArea } from "@/lib/domain/audit/findings";
+import { WorkpapersView, type WorkpaperAreaInfo } from "./workpapers-view";
 import { PayrollTab, payrollStatus } from "./payroll-tab";
 import type { PayrollAccountMap } from "@/lib/domain/payroll/ledger-reconciliation";
 import { PageHeader } from "@/components/page-header";
@@ -49,11 +51,12 @@ type TabKey = (typeof TABS)[number]["key"];
 export default async function EngagementPage({ params, searchParams }: PageProps<"/audit/[id]">) {
   const { id } = await params;
   const sp = await searchParams;
-  const { org, can } = await getContext();
+  const { org, can, user } = await getContext();
   const data = /^[0-9a-f-]{36}$/i.test(id) ? await loadEngagementLedger(org.id, id) : null;
   if (!data) notFound();
   const { engagement: e, accounts, lines } = data;
   const tab: TabKey | null = TABS.find((t) => t.key === sp.tab)?.key ?? null;
+  const showWorkpapers = sp.tab === "wp";
   const write = can("write_books");
   const hasBooks = lines.length > 0;
 
@@ -66,6 +69,7 @@ export default async function EngagementPage({ params, searchParams }: PageProps
     loadPayslips(org.id, e.id),
     loadPayments(org.id, e.id),
   ]);
+  const workpapers = await listWorkpapers(org.id, e.id);
 
   // שורת סטטוס קצרה לכל בדיקה, לאריחים בסקירה
   const status: Record<TabKey, { text: string; tone: "good" | "warn" | "bad" | "muted" }> = {
@@ -99,6 +103,30 @@ export default async function EngagementPage({ params, searchParams }: PageProps
   }
   const TONE_BADGE = { good: "badge-good", warn: "badge-warn", bad: "badge-bad", muted: "badge-muted" } as const;
 
+  // ממצאים מכל הבדיקות — לניירות העבודה (אותם חישובים כמו במסכים)
+  const findings = collectFindings({
+    fiscalYear: e.fiscalYear,
+    yearEnd: e.yearEnd,
+    current: { accounts, lines },
+    prior: data.prior.lines.length ? data.prior : null,
+    materiality: materiality ? { performance: materiality.performance, trivial: materiality.trivial } : null,
+    payroll: payroll?.file ?? null,
+    payslips: payslips?.rows ?? [],
+    payments: payments?.rows ?? null,
+    payrollMapping: (e.payrollConfig as PayrollAccountMap | null) ?? null,
+  });
+  const byArea = findingsByArea(findings, notes);
+  const hasPayroll = Boolean(payroll) || Boolean(payslips?.rows.length);
+  const areas: WorkpaperAreaInfo[] = WORKPAPER_AREAS.map((key) => ({
+    key,
+    label: TABS.find((t) => t.key === key)!.label,
+    status: status[key],
+    findings: byArea.get(key) ?? null,
+    available: key === "payroll" ? hasPayroll : hasBooks,
+  }));
+  const wpPrepared = areas.filter((a) => workpapers.has(a.key)).length;
+  const wpReviewed = areas.filter((a) => workpapers.get(a.key)?.reviewedAt).length;
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -126,7 +154,7 @@ export default async function EngagementPage({ params, searchParams }: PageProps
           </span>
         }
         actions={
-          tab && (
+          (tab || showWorkpapers) && (
             <Link href={`/audit/${e.id}`} className="btn-ghost btn-sm">
               לסקירת התיק
             </Link>
@@ -134,7 +162,9 @@ export default async function EngagementPage({ params, searchParams }: PageProps
         }
       />
 
-      {tab === null && (
+      {showWorkpapers && <WorkpapersView engagementId={e.id} areas={areas} workpapers={workpapers} userId={user.id} write={write} />}
+
+      {tab === null && !showWorkpapers && (
         <>
           {/* שלב 1+2: ספרים ומהותיות */}
           <div className="grid gap-4 lg:grid-cols-2">
@@ -233,6 +263,42 @@ export default async function EngagementPage({ params, searchParams }: PageProps
                   </Link>
                 );
               })}
+            </div>
+          </section>
+
+          {/* שלב 4: סיכום — ניירות עבודה ומכתב להנהלה */}
+          <section className="space-y-3">
+            <div className="flex items-center gap-3">
+              <span className="bubble bg-brand-soft text-brand font-black">4</span>
+              <h2 className="card-title">סיכום התיק</h2>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Link href={`/audit/${e.id}?tab=wp`} className="tile">
+                <span className="bubble bg-violet-soft text-violet">
+                  <Icons.fileText size={22} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="font-bold">ניירות עבודה</span>
+                    <span className={`badge num ${wpReviewed === areas.length ? "badge-good" : wpPrepared ? "badge-brand" : "badge-muted"}`}>
+                      {wpPrepared}/{areas.length} הוכנו · {wpReviewed} נסקרו
+                    </span>
+                  </span>
+                  <span className="mt-0.5 block text-xs text-muted">מסקנה לכל תחום, מי הכין ומי סקר</span>
+                </span>
+              </Link>
+              <Link href={`/audit/${e.id}/letter`} className="tile">
+                <span className="bubble bg-pink-soft text-pink">
+                  <Icons.inbox size={22} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="font-bold">מכתב להנהלה</span>
+                    <span className={`badge num ${findings.length ? "badge-warn" : "badge-muted"}`}>{findings.length} ממצאים</span>
+                  </span>
+                  <span className="mt-0.5 block text-xs text-muted">טיוטה מכל הממצאים בתיק, להדפסה ועריכה</span>
+                </span>
+              </Link>
             </div>
           </section>
         </>

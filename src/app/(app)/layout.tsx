@@ -11,7 +11,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <div className="min-h-screen">
       {/* פס עליון דק: לוגו + המשרד הפעיל, ובצד השני המשתמש */}
-      <header className="sticky top-0 z-20 border-b border-border/70 bg-bg/85 backdrop-blur">
+      <header className="sticky top-0 z-20 print:hidden border-b border-border/70 bg-bg/85 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 md:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <Link
@@ -62,7 +62,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       </header>
 
       <div className="mx-auto flex max-w-7xl gap-8 px-4 py-6 md:px-6 md:py-8">
-        <aside className="hidden w-52 shrink-0 md:block">
+        <aside className="hidden w-52 shrink-0 md:block print:hidden">
           <div className="sticky top-20">
             <SideNav />
           </div>
@@ -71,7 +71,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       </div>
 
       {/* בנייד: התפריט למטה, כמו באפליקציה */}
-      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface/95 px-2 py-1.5 backdrop-blur md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-20 print:hidden border-t border-border bg-surface/95 px-2 py-1.5 backdrop-blur md:hidden">
         <MobileNav />
       </nav>
     </div>

@@ -411,3 +411,27 @@ export async function setPaymentsMappingAction(engagementId: string, _: FormStat
   revalidatePath(`/audit/${engagementId}`);
   return { ok: true };
 }
+
+export async function prepareWorkpaperAction(engagementId: string, area: string, _: FormState, formData: FormData): Promise<FormState> {
+  try {
+    const { org, user } = await requirePermission("write_books");
+    const { prepareWorkpaper } = await import("@/lib/services/audit");
+    await prepareWorkpaper(org.id, uuid.parse(engagementId), area, String(formData.get("conclusion") ?? ""), user.id);
+  } catch (e) {
+    return errorMessage(e);
+  }
+  revalidatePath(`/audit/${engagementId}`);
+  return { ok: true };
+}
+
+export async function reviewWorkpaperAction(engagementId: string, area: string): Promise<FormState> {
+  try {
+    const { org, user } = await requirePermission("write_books");
+    const { reviewWorkpaper } = await import("@/lib/services/audit");
+    await reviewWorkpaper(org.id, uuid.parse(engagementId), area, user.id);
+  } catch (e) {
+    return errorMessage(e);
+  }
+  revalidatePath(`/audit/${engagementId}`);
+  return { ok: true };
+}

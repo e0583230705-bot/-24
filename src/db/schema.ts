@@ -444,3 +444,25 @@ export const auditPayments = pgTable(
   },
   (t) => [uniqueIndex("audit_payments_engagement").on(t.engagementId)],
 );
+
+/**
+ * נייר עבודה לכל תחום בתיק: מסקנה, מי הכין ומתי, מי סקר ומתי.
+ * כל שינוי במסקנה מבטל את הסקירה; הסוקר חייב להיות אדם אחר ממי שהכין.
+ */
+export const auditWorkpapers = pgTable(
+  "audit_workpapers",
+  {
+    id: id(),
+    engagementId: uuid("engagement_id")
+      .notNull()
+      .references(() => auditEngagements.id, { onDelete: "cascade" }),
+    /** tb / je / analytics / recon / benford / sample / payroll */
+    area: text("area").notNull(),
+    conclusion: text("conclusion").notNull(),
+    preparedBy: uuid("prepared_by").references(() => users.id, { onDelete: "set null" }),
+    preparedAt: timestamp("prepared_at", { withTimezone: true }).notNull().defaultNow(),
+    reviewedBy: uuid("reviewed_by").references(() => users.id, { onDelete: "set null" }),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  },
+  (t) => [uniqueIndex("audit_workpapers_engagement_area").on(t.engagementId, t.area)],
+);
