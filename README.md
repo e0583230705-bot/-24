@@ -51,7 +51,7 @@ src/
 docs/research/         ← המחקר שעליו נשענות הבדיקות, כולל המפרט הרשמי של קובץ 126
 ```
 
-בפיתוח ובבדיקות ה־DB הוא PGlite (Postgres בתוך התהליך). בייצור: Netlify Database או כל Postgres (`DATABASE_URL`).
+בפיתוח ובבדיקות ה־DB הוא PGlite (Postgres בתוך התהליך). בייצור: Supabase (או כל Postgres) דרך `DATABASE_URL`.
 הסכמה כוללת גם טבלאות של מערכת הנהלת החשבונות שממנה הפרויקט הופרד; הן אינן בשימוש כאן ונשארו כדי לא לשבור
 מסדי נתונים קיימים.
 
@@ -69,7 +69,7 @@ npm run lint
 
 ### העלאה ל־Netlify
 
-`DATABASE_DRIVER=netlify` + `APP_URL`. המיגרציות מורצות בכל העלאה. גודל בקשה מוגבל ל־6MB.
+`DATABASE_URL` (Supabase) + `DATABASE_MIGRATIONS=external` + `APP_URL`. הסכמה מנוהלת ב־Supabase (ראו `docs/HANDOFF.md`). גודל בקשה מוגבל ל־6MB.
 
 ## מפת דרכים
 

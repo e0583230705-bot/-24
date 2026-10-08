@@ -67,9 +67,16 @@
 - **הריפו של הפרויקט: `e0583230705-bot/-24`** (https://github.com/e0583230705-bot/-24), ענף `main`. נוצר ב־7.10.2026 כהפרדה
   ממערכת הנהלת החשבונות (`e0583230705-bot/-`, ענף `ccr-066e7f67-2irjzj`), בלי היסטוריה משותפת. **הריפו ציבורי — להפוך לפרטי.**
 - **Netlify**: האתר `heshbonai-demo` (site id `105fafda-0ba9-445e-b4cd-6c2dd11c6c89`, https://heshbonai-demo.netlify.app)
-  אמור להציג את מערכת הביקורת: לחבר אותו לריפו `-24`, ענף `main`.
-  משתני סביבה: `DATABASE_DRIVER=netlify`, `APP_URL`. מסד הנתונים משותף למיגרציות הישנות (טבלאות הנהלת החשבונות
-  נשארו בסכמה ובמיגרציות כדי לא לשבור את ה־DB הקיים; הן פשוט לא בשימוש).
+  אמור להציג את מערכת הביקורת: לחבר אותו לריפו `-24`, ענף `main` (כרגע עדיין מחובר לריפו `-`).
+- **מסד הנתונים: Supabase** (8.10.2026). פרויקט `bikoret` (ref `peckeubgovyhjlcuqfuq`, פרנקפורט). 21 הטבלאות נוצרו
+  דרך כלי ה־MCP של Supabase מתוך המיגרציות של Drizzle (`drizzle/*.sql` מאוחדות), ולכן בייצור `DATABASE_MIGRATIONS=external`
+  — **שינוי סכמה חדש מריצים גם ב־Supabase (apply_migration) וגם מוסיפים ל־`drizzle/`** (לבדיקות ולפיתוח המקומי).
+  האפליקציה מתחברת בתפקיד `bikoret_app` (בעל הטבלאות) דרך ה־pooler בפורט 6543; טבלה חדשה שנוצרת כ־`postgres` צריכה
+  `ALTER TABLE ... OWNER TO bikoret_app` ו־`ENABLE ROW LEVEL SECURITY` (RLS דולק בכל הטבלאות כדי שה־anon key של Supabase
+  לא יחשוף נתונים; האפליקציה עצמה עוקפת RLS כבעלים).
+  משתני סביבה ב־Netlify: `DATABASE_URL` (עם `?sslmode=verify-full`), `DATABASE_MIGRATIONS=external`, `APP_URL`;
+  אם האימות מול תעודת השרת נכשל — `DATABASE_SSL_CA` עם תעודת השורש מ־Supabase. טבלאות הנהלת החשבונות נשארו בסכמה
+  (לא בשימוש).
 - מגבלות serverless: בקשות עד 6MB.
 
 ## סביבת עבודה
