@@ -800,3 +800,19 @@ export async function reviewWorkpaper(organizationId: string, engagementId: stri
     .where(and(eq(schema.auditWorkpapers.engagementId, engagement.id), eq(schema.auditWorkpapers.area, area)));
   await db.insert(schema.auditLog).values({ organizationId, action: "review", entity: "audit_workpaper", entityId: engagement.id, data: { area, by: userId } });
 }
+
+// ---------- תיק לדוגמה ----------
+
+/** תיק עם נתונים מדומים (ספרים לשנתיים, תלושים, העברות ומהותיות) — כדי לראות את כל הבדיקות בפעולה */
+export async function createDemoEngagement(organizationId: string, userId: string) {
+  const { demoLedgerCsv, demoPaymentsCsv, demoPayslipsCsv, DEMO_YEAR } = await import("@/lib/domain/audit/demo-data");
+  const enc = (s: string) => new TextEncoder().encode(s);
+  const e = await createEngagement(organizationId, userId, { clientName: "לקוח לדוגמה בע\"מ (נתונים מדומים)", fiscalYear: DEMO_YEAR });
+  await importLedger(organizationId, e.id, { name: `כרטסת-${DEMO_YEAR}.csv`, bytes: enc(demoLedgerCsv(DEMO_YEAR)) }, "current");
+  await importLedger(organizationId, e.id, { name: `כרטסת-${DEMO_YEAR - 1}.csv`, bytes: enc(demoLedgerCsv(DEMO_YEAR - 1)) }, "prior");
+  // מהותיות: 5% מהרווח לפני מס (כ־1.07 מיליון ₪ בנתונים המדומים)
+  await setMateriality(organizationId, e.id, { basis: "profit_before_tax", base: 1_070_000_00, pct: 5 });
+  await importPayslips(organizationId, e.id, { name: "ריכוז-שכר.csv", bytes: enc(demoPayslipsCsv()) });
+  await importPayments(organizationId, e.id, { name: "העברות-שכר.csv", bytes: enc(demoPaymentsCsv()) });
+  return e;
+}

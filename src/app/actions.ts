@@ -435,3 +435,10 @@ export async function reviewWorkpaperAction(engagementId: string, area: string):
   revalidatePath(`/audit/${engagementId}`);
   return { ok: true };
 }
+
+export async function createDemoEngagementAction() {
+  const { org, user } = await requirePermission("write_books");
+  const { createDemoEngagement } = await import("@/lib/services/audit");
+  const e = await createDemoEngagement(org.id, user.id);
+  redirect(`/audit/${e.id}`);
+}

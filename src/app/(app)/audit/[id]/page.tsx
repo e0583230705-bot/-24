@@ -32,6 +32,7 @@ import { compareYears, monthlySpikes } from "@/lib/domain/ledger/analytics";
 import { listNotes, listWorkpapers, loadPayments, loadPayroll, loadPayslips, WORKPAPER_AREAS } from "@/lib/services/audit";
 import { collectFindings, findingsByArea } from "@/lib/domain/audit/findings";
 import { WorkpapersView, type WorkpaperAreaInfo } from "./workpapers-view";
+import { DemoEngagementButton } from "@/components/demo-button";
 import { PayrollTab, payrollStatus } from "./payroll-tab";
 import type { PayrollAccountMap } from "@/lib/domain/payroll/ledger-reconciliation";
 import { PageHeader } from "@/components/page-header";
@@ -163,6 +164,16 @@ export default async function EngagementPage({ params, searchParams }: PageProps
       />
 
       {showWorkpapers && <WorkpapersView engagementId={e.id} areas={areas} workpapers={workpapers} userId={user.id} write={write} />}
+
+      {tab === null && !showWorkpapers && !hasBooks && !hasPayroll && (
+        <div className="notice notice-info flex flex-wrap items-center justify-between gap-3">
+          <span>
+            התיק עוד ריק. הבדיקות רצות על הקבצים שקולטים: ספרי הלקוח (שלב 1) או קבצי השכר (בבדיקת &quot;שכר&quot;). רוצים
+            לראות קודם איך זה נראה עם נתונים?
+          </span>
+          {write && <DemoEngagementButton className="btn btn-sm" />}
+        </div>
+      )}
 
       {tab === null && !showWorkpapers && (
         <>

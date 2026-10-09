@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getContext } from "@/lib/auth/dal";
 import { listEngagements } from "@/lib/services/audit";
 import { CreateEngagementForm } from "@/components/audit-forms";
+import { DemoEngagementButton } from "@/components/demo-button";
 import { Collapsible } from "@/components/page-header";
 import { Icons } from "@/components/icons";
 import { todayISO } from "@/lib/format";
@@ -75,6 +76,21 @@ export default async function AuditPage() {
             );
           })}
         </section>
+      )}
+
+      {can("write_books") && (
+        <div className="card flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="bubble bg-amber-soft text-amber">
+              <Icons.sparkles size={20} />
+            </span>
+            <div>
+              <p className="font-bold">רוצים לראות את הבדיקות בפעולה?</p>
+              <p className="text-xs text-muted">תיק עם נתונים מדומים: ספרים, תלושים והעברות, עם בעיות שנשתלו בכוונה.</p>
+            </div>
+          </div>
+          <DemoEngagementButton className="btn" />
+        </div>
       )}
 
       {can("write_books") && (
