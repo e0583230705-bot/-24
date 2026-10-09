@@ -114,7 +114,7 @@ export function PaymentsSection({
                 <Stat label="העברות" value={data.rows.length.toLocaleString("he-IL")} hint={data.skipped ? `${data.skipped} שורות דולגו` : undefined} />
                 <Stat label="הותאמו לתלוש" value={result.matched.toLocaleString("he-IL")} />
                 <Stat label="בלי תלוש" value={String(result.unmatched)} tone={result.unmatched ? "text-danger" : ""} />
-                <Stat label="מחוץ לתקופת התלושים" value={String(result.outOfRange)} hint="למשל ינואר ששילם את דצמבר הקודם" />
+                <Stat label="מחוץ לתקופת התלושים" value={String(result.outOfRange)} hint="למשל העברה בינואר על שכר דצמבר הקודם" />
               </div>
               <Findings findings={result.findings} engagementId={engagementId} write={write} noteProps={noteProps} />
               <details className="panel table-wrap" open>

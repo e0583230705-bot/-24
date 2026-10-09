@@ -108,7 +108,7 @@ export function ProvisionsSection({
             {stat("עובדים פעילים ב־31.12", String(result.employees.length), result.excluded ? `${result.excluded} עזבו במהלך השנה` : undefined)}
             {stat("חופשה", result.missing.vacationBalance ? "—" : formatILS(result.totals.vacation), "יתרת ימים × ערך יום")}
             {stat("הבראה שטרם שולמה", result.missing.recuperationPay ? "—" : formatILS(result.totals.recuperation), rate ? `תעריף ${formatILS(rate)} ליום` : undefined)}
-            {stat("פיצויים (לא מכוסה)", result.missing.severance ? "—" : formatILS(result.totals.severance), "בהנחת סעיף 14 על ההפקדות")}
+            {stat("פיצויים (חלק לא מכוסה)", result.missing.severance ? "—" : formatILS(result.totals.severance), "בהנחת סעיף 14 על ההפקדות")}
           </div>
 
           {books ? (

@@ -36,7 +36,7 @@ export function AddMemberForm() {
         </button>
       </div>
       <FormError message={state.error} />
-      {state.ok && <p className="text-sm text-brand">המשתמש נוסף לעסק.</p>}
+      {state.ok && <p className="text-sm text-brand">המשתמש נוסף למשרד.</p>}
     </form>
   );
 }

@@ -354,7 +354,7 @@ export function parseForm126(bytes: Uint8Array): PayrollFile {
     issues.push({ severity: "error", message: `סוגי רשומה לא מוכרים בקובץ: ${[...unknownTypes].map((t) => `"${t}"`).join(", ")}` });
   }
   if (counter.bad > 0) {
-    issues.push({ severity: "error", message: `${counter.bad} שדות נומריים עם תוכן שאינו מספר — נקלטו כ־0` });
+    issues.push({ severity: "error", message: `${counter.bad} שדות מספריים עם תוכן שאינו מספר — נקלטו כ־0` });
   }
   if (yearMismatch.length > 0) {
     issues.push({

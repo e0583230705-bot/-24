@@ -142,7 +142,7 @@ export function checkPayslipRows(rows: PayslipRow[]): PayslipFinding[] {
       const after = sorted.filter((s) => s.month > endMonth && s.gross > 0);
       // גמר חשבון בחודש העוקב — סביר; מעבר לזה — ממצא
       for (const s of after.filter((x) => x.month > nextMonth(endMonth))) {
-        push({ key: `payslip:${taxId}:${s.month}:after`, kind: "ps_paid_after_end", severity: "error", subject: taxId, message: `${who}: תלוש ${monthLabel(s.month)} על ${money(s.gross)} למרות סיום העסקה ב־${end}`, amount: s.gross });
+        push({ key: `payslip:${taxId}:${s.month}:after`, kind: "ps_paid_after_end", severity: "error", subject: taxId, message: `${who}: תלוש ${monthLabel(s.month)} על ${money(s.gross)} למרות סיום ההעסקה ב־${end}`, amount: s.gross });
       }
     }
     // פנסיה חסרה לעובד ותיק (יותר מ־6 חודשים מתחילת העבודה) — רק אם יש עמודת פנסיה בכלל

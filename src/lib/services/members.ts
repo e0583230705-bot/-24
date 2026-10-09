@@ -61,7 +61,7 @@ export async function addMember(actorUserId: string, organizationId: string, ema
     .from(schema.users)
     .where(eq(schema.users.email, normalizeEmail(email)));
   if (!user) throw new ValidationError("לא נמצא משתמש עם האימייל הזה. בקשו ממנו להירשם קודם.");
-  if (await getRole(user.id, organizationId)) throw new ValidationError("המשתמש כבר חבר בעסק");
+  if (await getRole(user.id, organizationId)) throw new ValidationError("המשתמש כבר חבר במשרד");
 
   await db.transaction(async (tx) => {
     await tx.insert(schema.memberships).values({ organizationId, userId: user.id, role });
@@ -79,9 +79,9 @@ export async function removeMember(actorUserId: string, organizationId: string, 
   await requireOwner(actorUserId, organizationId);
   const members = await listMembers(organizationId);
   const target = members.find((m) => m.userId === userId);
-  if (!target) throw new ValidationError("המשתמש אינו חבר בעסק");
+  if (!target) throw new ValidationError("המשתמש אינו חבר במשרד");
   if (target.role === "owner" && members.filter((m) => m.role === "owner").length === 1) {
-    throw new ValidationError("לא ניתן להסיר את הבעלים האחרון של העסק");
+    throw new ValidationError("לא ניתן להסיר את הבעלים האחרון של המשרד");
   }
   const db = await getDb();
   await db.transaction(async (tx) => {

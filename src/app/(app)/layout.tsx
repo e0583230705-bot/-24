@@ -35,7 +35,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
                     </option>
                   ))}
                 </select>
-                <button className="btn-ghost btn-sm">החלף</button>
+                <button className="btn-ghost btn-sm">החלפה</button>
               </form>
             ) : (
               <p className="truncate font-bold">{org.name}</p>

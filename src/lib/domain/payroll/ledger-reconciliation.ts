@@ -28,7 +28,7 @@ export type PayrollAccountMap = Record<PayrollAccountGroup, string[]>;
 
 export const PAYROLL_GROUPS: Record<PayrollAccountGroup, { label: string; kind: "expense" | "liability"; hint: string }> = {
   salaryExpense: { label: "הוצאות שכר (ברוטו)", kind: "expense", hint: "משכורות, שכר עבודה, שכר הנהלה" },
-  niEmployerExpense: { label: "ביטוח לאומי מעביד", kind: "expense", hint: "חלק המעסיק בדמי הביטוח" },
+  niEmployerExpense: { label: "ביטוח לאומי מעסיק", kind: "expense", hint: "חלק המעסיק בדמי הביטוח" },
   socialExpense: { label: "הפרשות סוציאליות", kind: "expense", hint: "פנסיה, פיצויים, קרן השתלמות — חלק מעסיק" },
   incomeTaxPayable: { label: "מס הכנסה ניכויים", kind: "liability", hint: "מס שנוכה מהעובדים ומועבר ב־102" },
   niPayable: { label: "ביטוח לאומי לשלם", kind: "liability", hint: "עובד + מעסיק + בריאות" },

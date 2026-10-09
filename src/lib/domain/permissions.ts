@@ -2,7 +2,7 @@ export type Role = "owner" | "accountant" | "viewer";
 
 export const ROLES: Record<Role, { label: string; description: string }> = {
   owner: { label: "בעלים", description: "גישה מלאה, כולל ניהול משתמשים" },
-  accountant: { label: "רואה חשבון / מנהל חשבונות", description: "הפקת מסמכים ורישום הוצאות" },
+  accountant: { label: "רואה חשבון / מנהל חשבונות", description: "עבודה על תיקי ביקורת: קליטת קבצים, הסברים וניירות עבודה" },
   viewer: { label: "צפייה בלבד", description: "צפייה בנתונים ובדוחות" },
 };
 

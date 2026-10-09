@@ -90,7 +90,7 @@ type ImportedAccount = LedgerAccount & { trialBalanceCode?: string; trialBalance
 function parseLedgerFiles(files: { name: string; bytes: Uint8Array }[]) {
   const iniFile = files.find((f) => startsWith(f.bytes, "A000"));
   const bkmvFile = files.find((f) => startsWith(f.bytes, "A100"));
-  if (iniFile && !bkmvFile) throw new ValidationError("נבחר INI.TXT בלבד — יש לבחור גם את BKMVDATA.TXT מאותה ספרייה");
+  if (iniFile && !bkmvFile) throw new ValidationError("נבחר INI.TXT בלבד — יש לבחור גם את BKMVDATA.TXT מאותה תיקייה");
   if (bkmvFile) {
     const ini: IniInfo | null = iniFile ? parseIni(decodeUniform(iniFile.bytes)) : null;
     const bkmv = parseBkmvdata(decodeUniform(bkmvFile.bytes, ini?.charset ?? undefined));
@@ -610,15 +610,15 @@ export async function setPayslipMapping(organizationId: string, engagementId: st
   const db = await getDb();
   const [row] = await db.select({ headers: schema.auditPayslips.headers }).from(schema.auditPayslips).where(eq(schema.auditPayslips.engagementId, engagement.id));
   if (!row) throw new ValidationError("עדיין לא נקלט ריכוז שכר לתיק");
+  const { missingRequiredFields, PAYSLIP_FIELDS } = await import("@/lib/domain/payroll/payslips");
   const width = (row.headers as string[]).length;
   const used = new Set<number>();
   for (const [field, idx] of Object.entries(mapping)) {
     if (idx === undefined) continue;
-    if (!Number.isInteger(idx) || idx < 0 || idx >= width) throw new ValidationError(`עמודה לא קיימת עבור ${field}`);
+    if (!Number.isInteger(idx) || idx < 0 || idx >= width) throw new ValidationError(`עמודה לא קיימת עבור ${PAYSLIP_FIELDS[field as keyof typeof PAYSLIP_FIELDS]?.label ?? field}`);
     if (used.has(idx)) throw new ValidationError("אותה עמודה מופתה ליותר משדה אחד");
     used.add(idx);
   }
-  const { missingRequiredFields, PAYSLIP_FIELDS } = await import("@/lib/domain/payroll/payslips");
   const missing = missingRequiredFields(mapping);
   if (missing.length) throw new ValidationError(`חסר מיפוי לעמודות חובה: ${missing.map((f) => PAYSLIP_FIELDS[f].label).join(", ")}`);
   await db.update(schema.auditPayslips).set({ mapping }).where(eq(schema.auditPayslips.engagementId, engagement.id));
@@ -696,15 +696,15 @@ export async function setPaymentsMapping(organizationId: string, engagementId: s
   const db = await getDb();
   const [row] = await db.select({ headers: schema.auditPayments.headers }).from(schema.auditPayments).where(eq(schema.auditPayments.engagementId, engagement.id));
   if (!row) throw new ValidationError("עדיין לא נקלט קובץ העברות לתיק");
+  const { missingPaymentFields, PAYMENT_FIELDS } = await import("@/lib/domain/payroll/payments");
   const width = (row.headers as string[]).length;
   const used = new Set<number>();
   for (const [field, idx] of Object.entries(mapping)) {
     if (idx === undefined) continue;
-    if (!Number.isInteger(idx) || idx < 0 || idx >= width) throw new ValidationError(`עמודה לא קיימת עבור ${field}`);
+    if (!Number.isInteger(idx) || idx < 0 || idx >= width) throw new ValidationError(`עמודה לא קיימת עבור ${PAYMENT_FIELDS[field as keyof typeof PAYMENT_FIELDS]?.label ?? field}`);
     if (used.has(idx)) throw new ValidationError("אותה עמודה מופתה ליותר משדה אחד");
     used.add(idx);
   }
-  const { missingPaymentFields } = await import("@/lib/domain/payroll/payments");
   const missing = missingPaymentFields(mapping);
   if (missing.length) throw new ValidationError(`חסר מיפוי לעמודות חובה: ${missing.join(", ")}`);
   await db.update(schema.auditPayments).set({ mapping }).where(eq(schema.auditPayments.engagementId, engagement.id));
