@@ -48,6 +48,24 @@ export const users = pgTable("users", {
   failedLogins: integer("failed_logins").notNull().default(0),
   lockedUntil: timestamp("locked_until", { withTimezone: true }),
   createdAt: createdAt(),
+  /** אימות דו־שלבי: הסוד מוצפן (AES-GCM). קיים בלי totpEnabledAt = הגדרה שעוד לא אושרה */
+  totpSecret: text("totp_secret"),
+  totpEnabledAt: timestamp("totp_enabled_at", { withTimezone: true }),
+  /** hash של קודי הגיבוי שעוד לא נוצלו */
+  backupCodes: jsonb("backup_codes"),
+  /** קודי אימות שגויים ברצף — נספרים בנפרד מהסיסמה, כדי שכניסה בסיסמה נכונה לא תאפס אותם */
+  totpFailures: integer("totp_failures").notNull().default(0),
+});
+
+/** כניסה שעברה סיסמה ומחכה לקוד האימות הדו־שלבי. בעוגייה הטוקן; כאן רק ה־hash שלו */
+export const pendingLogins = pgTable("pending_logins", {
+  id: text("id").primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  attempts: integer("attempts").notNull().default(0),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: createdAt(),
 });
 
 /**

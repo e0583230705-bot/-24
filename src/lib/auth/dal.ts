@@ -23,6 +23,27 @@ export async function startSession(userId: string, activeOrganizationId: string 
   });
 }
 
+/** כניסה שעברה סיסמה ומחכה לקוד האימות הדו־שלבי */
+export const PENDING_2FA_COOKIE = "login_2fa";
+
+export async function setPendingLoginCookie(token: string, maxAgeMs: number) {
+  (await cookies()).set(PENDING_2FA_COOKIE, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: Math.floor(maxAgeMs / 1000),
+  });
+}
+
+export async function takePendingLoginCookie() {
+  return (await cookies()).get(PENDING_2FA_COOKIE)?.value ?? null;
+}
+
+export async function clearPendingLoginCookie() {
+  (await cookies()).delete(PENDING_2FA_COOKIE);
+}
+
 export async function endSession() {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;

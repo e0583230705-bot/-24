@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { loginAction, signupAction, type FormState } from "@/app/actions";
+import { loginAction, signupAction, verifyLoginAction, type FormState } from "@/app/actions";
 import { PASSWORD_MIN_LENGTH } from "@/lib/auth/password-rules";
 import { FormError } from "./form-error";
 import { useFormAction } from "./submit";
@@ -78,6 +78,39 @@ export function SignupForm() {
         כבר רשום?{" "}
         <Link href="/login" className="text-brand">
           התחברות
+        </Link>
+      </p>
+    </form>
+  );
+}
+
+/** שלב שני בכניסה: קוד מאפליקציית האימות (או קוד גיבוי) */
+export function VerifyLoginForm({ next }: { next?: string }) {
+  const [state, action, pending, ready] = useFormAction<FormState>(verifyLoginAction, {});
+  return (
+    <form method="post" onSubmit={action} className="space-y-4">
+      <input type="hidden" name="next" value={next ?? "/"} />
+      <div>
+        <label className="label" htmlFor="code">קוד אימות</label>
+        <input
+          id="code"
+          name="code"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          autoFocus
+          required
+          placeholder="123456"
+          className="input num text-center text-lg tracking-[0.3em]"
+        />
+        <p className="mt-1 text-xs text-muted">6 ספרות מאפליקציית האימות. אין גישה לטלפון? אפשר להקליד קוד גיבוי.</p>
+      </div>
+      <FormError message={state.error} />
+      <button className="btn w-full" disabled={pending || !ready}>
+        {pending ? "בודק..." : "כניסה"}
+      </button>
+      <p className="text-center text-sm">
+        <Link href="/login" className="text-muted hover:text-brand">
+          חזרה להתחברות
         </Link>
       </p>
     </form>

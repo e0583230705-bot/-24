@@ -5,7 +5,16 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { readUpload, UploadTooLargeError } from "@/lib/upload";
 import { parseShekels } from "@/lib/domain/money";
-import { endSession, getContext, requirePermission, requireUser, startSession } from "@/lib/auth/dal";
+import {
+  clearPendingLoginCookie,
+  endSession,
+  getContext,
+  requirePermission,
+  requireUser,
+  setPendingLoginCookie,
+  startSession,
+  takePendingLoginCookie,
+} from "@/lib/auth/dal";
 import {
   authenticate,
   createPasswordReset,
@@ -73,13 +82,69 @@ export async function signupAction(_: FormState, formData: FormData): Promise<Fo
 }
 
 export async function loginAction(_: FormState, formData: FormData): Promise<FormState> {
+  const next = safeNext(formData.get("next"));
+  let secondStep = false;
   try {
     const user = await authenticate(String(formData.get("email") ?? ""), String(formData.get("password") ?? ""));
-    await startSession(user.id);
+    const { needsSecondFactor, createPendingLogin, PENDING_LOGIN_TTL_MS } = await import("@/lib/services/two-factor");
+    if (await needsSecondFactor(user.id)) {
+      await setPendingLoginCookie(await createPendingLogin(user.id), PENDING_LOGIN_TTL_MS);
+      secondStep = true;
+    } else {
+      await startSession(user.id);
+    }
+  } catch (e) {
+    return errorMessage(e);
+  }
+  redirect(secondStep ? `/login/verify?next=${encodeURIComponent(next)}` : next);
+}
+
+/** שלב שני בכניסה: קוד מאפליקציית האימות או קוד גיבוי */
+export async function verifyLoginAction(_: FormState, formData: FormData): Promise<FormState> {
+  try {
+    const token = await takePendingLoginCookie();
+    if (!token) return { error: "פג תוקף הכניסה. יש להזין שוב אימייל וסיסמה." };
+    const { completePendingLogin } = await import("@/lib/services/two-factor");
+    const userId = await completePendingLogin(token, String(formData.get("code") ?? ""));
+    await clearPendingLoginCookie();
+    await startSession(userId);
   } catch (e) {
     return errorMessage(e);
   }
   redirect(safeNext(formData.get("next")));
+}
+
+export type TwoFactorSetupState = FormState & { secret?: string; qr?: string; backupCodes?: string[] };
+
+/** הגדרת אימות דו־שלבי: שלב 1 מחזיר סוד וקוד QR, שלב 2 מאשר בקוד ומחזיר קודי גיבוי */
+export async function twoFactorSetupAction(_: TwoFactorSetupState, formData: FormData): Promise<TwoFactorSetupState> {
+  try {
+    const { user } = await requireUser();
+    const tf = await import("@/lib/services/two-factor");
+    if (formData.get("step") === "confirm") {
+      const backupCodes = await tf.confirmTwoFactorSetup(user.id, String(formData.get("code") ?? ""));
+      revalidatePath("/settings");
+      return { ok: true, backupCodes };
+    }
+    const { secret, url } = await tf.startTwoFactorSetup(user.id);
+    const QRCode = (await import("qrcode")).default;
+    const qr = await QRCode.toString(url, { type: "svg", margin: 1, errorCorrectionLevel: "M" });
+    return { secret, qr };
+  } catch (e) {
+    return errorMessage(e);
+  }
+}
+
+export async function disableTwoFactorAction(_: FormState, formData: FormData): Promise<FormState> {
+  try {
+    const { user } = await requireUser();
+    const { disableTwoFactor } = await import("@/lib/services/two-factor");
+    await disableTwoFactor(user.id, String(formData.get("code") ?? ""));
+  } catch (e) {
+    return errorMessage(e);
+  }
+  revalidatePath("/settings");
+  return { ok: true };
 }
 
 export async function logoutAction() {
