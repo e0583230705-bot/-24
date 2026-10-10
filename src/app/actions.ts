@@ -3,6 +3,7 @@
 import { redirect, unstable_rethrow } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { readUpload, UploadTooLargeError } from "@/lib/upload";
 import { parseShekels } from "@/lib/domain/money";
 import { endSession, getContext, requirePermission, requireUser, startSession } from "@/lib/auth/dal";
 import {
@@ -32,7 +33,7 @@ export type FormState = { error?: string; ok?: boolean; message?: string };
 
 function errorMessage(e: unknown): FormState {
   unstable_rethrow(e); // הפניות של Next (למשל לדף ההתחברות) צריכות לעבור הלאה
-  if (e instanceof ValidationError || e instanceof ForbiddenError || e instanceof BankParseError || e instanceof EmailError) {
+  if (e instanceof ValidationError || e instanceof ForbiddenError || e instanceof BankParseError || e instanceof EmailError || e instanceof UploadTooLargeError) {
     return { error: e.message };
   }
   if (e instanceof z.ZodError) return { error: e.issues[0]?.message ?? "קלט לא תקין" };
@@ -195,7 +196,7 @@ export async function importLedgerAction(
     const r = await importLedger(
       org.id,
       uuid.parse(engagementId),
-      await Promise.all(files.map(async (f) => ({ name: f.name, bytes: new Uint8Array(await f.arrayBuffer()) }))),
+      await Promise.all(files.map(async (f) => ({ name: f.name, bytes: await readUpload(f) }))),
       period === "prior" ? "prior" : "current",
     );
     message =
@@ -261,7 +262,7 @@ export async function importBankStatementAction(engagementId: string, _: FormSta
     if (!accountCode) return { error: "יש לבחור את חשבון הבנק בספרים" };
     const r = await importBankStatement(org.id, uuid.parse(engagementId), accountCode, {
       name: file.name,
-      bytes: new Uint8Array(await file.arrayBuffer()),
+      bytes: await readUpload(file),
     });
     message = `נקלטו ${r.rows.toLocaleString("he-IL")} תנועות מדף הבנק`;
   } catch (e) {
@@ -311,7 +312,7 @@ export async function importPayrollAction(engagementId: string, _: FormState, fo
     const file = formData.get("file");
     if (!(file instanceof File) || file.size === 0) return { error: "יש לבחור קובץ 126" };
     const { importPayroll } = await import("@/lib/services/audit");
-    const r = await importPayroll(org.id, uuid.parse(engagementId), { name: file.name, bytes: new Uint8Array(await file.arrayBuffer()) });
+    const r = await importPayroll(org.id, uuid.parse(engagementId), { name: file.name, bytes: await readUpload(file) });
     message =
       `נקלטו ${r.employees.toLocaleString("he-IL")} עובדים ו־${r.months} חודשי דיווח` +
       (r.issues.length ? ` · נמצאו ${r.issues.length} בעיות בקובץ` : "");
@@ -345,7 +346,7 @@ export async function importPayslipsAction(engagementId: string, _: FormState, f
     const file = formData.get("file");
     if (!(file instanceof File) || file.size === 0) return { error: "יש לבחור קובץ אקסל או CSV" };
     const { importPayslips } = await import("@/lib/services/audit");
-    const r = await importPayslips(org.id, uuid.parse(engagementId), { name: file.name, bytes: new Uint8Array(await file.arrayBuffer()) });
+    const r = await importPayslips(org.id, uuid.parse(engagementId), { name: file.name, bytes: await readUpload(file) });
     message =
       r.rows > 0
         ? `נקלטו ${r.rows.toLocaleString("he-IL")} תלושים (${r.mapped} מתוך ${r.headers} עמודות זוהו${r.skipped ? `, ${r.skipped} שורות דולגו` : ""})`
@@ -382,7 +383,7 @@ export async function importPaymentsAction(engagementId: string, _: FormState, f
     const file = formData.get("file");
     if (!(file instanceof File) || file.size === 0) return { error: "יש לבחור קובץ אקסל או CSV" };
     const { importPayments } = await import("@/lib/services/audit");
-    const r = await importPayments(org.id, uuid.parse(engagementId), { name: file.name, bytes: new Uint8Array(await file.arrayBuffer()) });
+    const r = await importPayments(org.id, uuid.parse(engagementId), { name: file.name, bytes: await readUpload(file) });
     message =
       r.rows > 0
         ? `נקלטו ${r.rows.toLocaleString("he-IL")} העברות (${r.mapped} מתוך ${r.headers} עמודות זוהו)`

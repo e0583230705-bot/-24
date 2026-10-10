@@ -21,7 +21,9 @@ import type { PayrollAccountMap } from "@/lib/domain/payroll/ledger-reconciliati
 import type { PayslipColumnMap, PayslipRow } from "@/lib/domain/payroll/payslips";
 import type { PaymentColumnMap, PaymentRow } from "@/lib/domain/payroll/payments";
 
-export const MAX_LEDGER_BYTES = 30 * 1024 * 1024;
+export const MAX_LEDGER_BYTES = 120 * 1024 * 1024;
+/** שורות לכל פקודת INSERT: פחות סבבים מול מסד הנתונים (8 עמודות × 5,000 = 40,000 פרמטרים, מתחת למגבלת 65,535) */
+const BATCH = 5000;
 
 export async function createEngagement(
   organizationId: string,
@@ -151,7 +153,7 @@ export async function importLedger(
   if (!engagement) throw new ValidationError("תיק הביקורת לא נמצא");
   if (files.length === 0 || files.some((f) => f.bytes.byteLength === 0)) throw new ValidationError("הקובץ ריק");
   if (files.reduce((s, f) => s + f.bytes.byteLength, 0) > MAX_LEDGER_BYTES) {
-    throw new ValidationError("הקבצים גדולים מדי (עד 30MB)");
+    throw new ValidationError("הקבצים גדולים מדי (עד 120MB)");
   }
 
   const parsed = parseLedgerFiles(files);
@@ -180,9 +182,9 @@ export async function importLedger(
     await tx
       .delete(schema.auditAccounts)
       .where(and(eq(schema.auditAccounts.engagementId, engagement.id), eq(schema.auditAccounts.period, period)));
-    for (let i = 0; i < accounts.length; i += 1000) {
+    for (let i = 0; i < accounts.length; i += BATCH) {
       await tx.insert(schema.auditAccounts).values(
-        accounts.slice(i, i + 1000).map((a) => ({
+        accounts.slice(i, i + BATCH).map((a) => ({
           engagementId: engagement.id,
           period,
           code: a.code,
@@ -194,10 +196,10 @@ export async function importLedger(
         })),
       );
     }
-    for (let i = 0; i < lines.length; i += 1000) {
+    for (let i = 0; i < lines.length; i += BATCH) {
       await tx
         .insert(schema.auditLines)
-        .values(lines.slice(i, i + 1000).map((l) => ({ engagementId: engagement.id, period, ...l })));
+        .values(lines.slice(i, i + BATCH).map((l) => ({ engagementId: engagement.id, period, ...l })));
     }
     await tx
       .update(schema.auditEngagements)
@@ -440,14 +442,14 @@ export async function setVatConfig(organizationId: string, engagementId: string,
 
 // ---------- שכר (קובץ 126) ----------
 
-const MAX_PAYROLL_BYTES = 30 * 1024 * 1024;
+const MAX_PAYROLL_BYTES = 120 * 1024 * 1024;
 
 /** קליטת קובץ 126 של הלקוח המבוקר לתיק. קליטה חוזרת מחליפה את הקודמת */
 export async function importPayroll(organizationId: string, engagementId: string, file: { name: string; bytes: Uint8Array }) {
   const engagement = await getEngagement(organizationId, engagementId);
   if (!engagement) throw new ValidationError("תיק הביקורת לא נמצא");
   if (file.bytes.byteLength === 0) throw new ValidationError("הקובץ ריק");
-  if (file.bytes.byteLength > MAX_PAYROLL_BYTES) throw new ValidationError("הקובץ גדול מדי (עד 30MB)");
+  if (file.bytes.byteLength > MAX_PAYROLL_BYTES) throw new ValidationError("הקובץ גדול מדי (עד 120MB)");
   const { isForm126, parseForm126, Form126Error } = await import("@/lib/domain/payroll/form126");
   if (!isForm126(file.bytes)) {
     throw new ValidationError("זה לא קובץ 126: מצפים לקובץ טקסט ברשומות באורך 966 תווים שמתחיל ברשומה מובילה מסוג 10");
@@ -538,7 +540,7 @@ export async function importPayslips(organizationId: string, engagementId: strin
   const engagement = await getEngagement(organizationId, engagementId);
   if (!engagement) throw new ValidationError("תיק הביקורת לא נמצא");
   if (file.bytes.byteLength === 0) throw new ValidationError("הקובץ ריק");
-  if (file.bytes.byteLength > MAX_PAYROLL_BYTES) throw new ValidationError("הקובץ גדול מדי (עד 30MB)");
+  if (file.bytes.byteLength > MAX_PAYROLL_BYTES) throw new ValidationError("הקובץ גדול מדי (עד 120MB)");
   const { parsePayslipTable, autoMapColumns, applyPayslipMapping, missingRequiredFields, PayslipParseError, PAYSLIP_FIELDS } = await import(
     "@/lib/domain/payroll/payslips"
   );
@@ -631,7 +633,7 @@ export async function importPayments(organizationId: string, engagementId: strin
   const engagement = await getEngagement(organizationId, engagementId);
   if (!engagement) throw new ValidationError("תיק הביקורת לא נמצא");
   if (file.bytes.byteLength === 0) throw new ValidationError("הקובץ ריק");
-  if (file.bytes.byteLength > MAX_PAYROLL_BYTES) throw new ValidationError("הקובץ גדול מדי (עד 30MB)");
+  if (file.bytes.byteLength > MAX_PAYROLL_BYTES) throw new ValidationError("הקובץ גדול מדי (עד 120MB)");
   const { parsePayslipTable, PayslipParseError } = await import("@/lib/domain/payroll/payslips");
   const { autoMapPaymentColumns, applyPaymentMapping, missingPaymentFields } = await import("@/lib/domain/payroll/payments");
   let table;
