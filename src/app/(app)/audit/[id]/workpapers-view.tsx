@@ -70,6 +70,12 @@ export function WorkpapersView({
           <span className={`badge num ${reviewed === areas.length ? "badge-good" : "badge-muted"}`}>
             {reviewed}/{areas.length} נסקרו
           </span>
+          <Link href={`/audit/${engagementId}/workpapers`} className="btn-ghost btn-sm">
+            הדפסה / PDF
+          </Link>
+          <a href={`/audit/${engagementId}/export`} download className="btn-ghost btn-sm">
+            ממצאים לאקסל
+          </a>
           <Link href={`/audit/${engagementId}/letter`} className="btn btn-sm">
             מכתב להנהלה
           </Link>

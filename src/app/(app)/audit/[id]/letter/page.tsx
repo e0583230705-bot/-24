@@ -1,34 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getContext } from "@/lib/auth/dal";
-import { loadEngagementLedger, loadPayments, loadPayroll, loadPayslips } from "@/lib/services/audit";
-import { computeMateriality } from "@/lib/domain/ledger/materiality";
-import { collectFindings } from "@/lib/domain/audit/findings";
+import { loadEngagementOverview } from "../overview";
 import { buildManagementLetter } from "@/lib/domain/audit/management-letter";
-import type { PayrollAccountMap } from "@/lib/domain/payroll/ledger-reconciliation";
 import { PrintButton } from "@/components/print-button";
 import { Icons } from "@/components/icons";
 
 export default async function ManagementLetterPage({ params }: PageProps<"/audit/[id]/letter">) {
   const { id } = await params;
   const { org } = await getContext();
-  const data = /^[0-9a-f-]{36}$/i.test(id) ? await loadEngagementLedger(org.id, id) : null;
-  if (!data) notFound();
-  const { engagement: e, accounts, lines } = data;
-  const materiality = e.materialityBase && e.materialityPct ? computeMateriality(e.materialityBase, e.materialityPct) : null;
-  const [payroll, payslips, payments] = await Promise.all([loadPayroll(org.id, e.id), loadPayslips(org.id, e.id), loadPayments(org.id, e.id)]);
-
-  const findings = collectFindings({
-    fiscalYear: e.fiscalYear,
-    yearEnd: e.yearEnd,
-    current: { accounts, lines },
-    prior: data.prior.lines.length ? data.prior : null,
-    materiality: materiality ? { performance: materiality.performance, trivial: materiality.trivial } : null,
-    payroll: payroll?.file ?? null,
-    payslips: payslips?.rows ?? [],
-    payments: payments?.rows ?? null,
-    payrollMapping: (e.payrollConfig as PayrollAccountMap | null) ?? null,
-  });
+  const ov = await loadEngagementOverview(org.id, id);
+  if (!ov) notFound();
+  const { engagement: e, findings } = ov;
   const topics = buildManagementLetter(findings);
   const today = new Date().toLocaleDateString("he-IL", { timeZone: "Asia/Jerusalem", day: "numeric", month: "long", year: "numeric" });
 
